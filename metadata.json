@@ -1,0 +1,5 @@
+{
+  "name": "Green World",
+  "description": "A game where you plant flowers to combat rising CO2 levels. Buy seeds, grow plants, and sell them to earn money and level up, all while trying to keep the planet's CO2 concentration from reaching a critical point.",
+  "requestFramePermissions": []
+}
