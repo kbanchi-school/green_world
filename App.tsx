@@ -1,7 +1,9 @@
 
+
+
 import React, { useState, useEffect, useCallback } from 'react';
 import { PlantType, Plot, Seller, GamePhase, DailySummary, GameState, SaveData, GeneType, WeatherType } from './types';
-import { PLANT_DATA, INITIAL_MONEY, INITIAL_CO2, INITIAL_PLOT_COUNT, MIN_DAILY_CO2_INCREASE, MAX_DAILY_CO2_INCREASE, MAX_CO2, BUYER_VISIT_FREQUENCY, XP_PER_LEVEL, MISSION_DATA, PLOT_UNLOCK_LEVEL, PLOT_BASE_COST, PLOT_COST_INCREMENT, BREEDING_UNLOCK_LEVEL, GENE_COMBINATIONS, WEATHER_DEFINITIONS } from './constants';
+import { PLANT_DATA, INITIAL_MONEY, INITIAL_CO2, INITIAL_PLOT_COUNT, MIN_DAILY_CO2_INCREASE, MAX_DAILY_CO2_INCREASE, MAX_CO2, BUYER_VISIT_FREQUENCY, XP_PER_LEVEL, MISSION_DATA, PLOT_UNLOCK_LEVEL, PLOT_BASE_COST, PLOT_COST_INCREMENT, BREEDING_UNLOCK_LEVEL, GENE_COMBINATIONS, WEATHER_DEFINITIONS, SPRINKLER_UNLOCK_LEVEL, SPRINKLER_COST, SPRINKLER_MAINTENANCE_COST } from './constants';
 import Header from './components/Header';
 import Garden from './components/Garden';
 import Inventory from './components/Inventory';
@@ -15,9 +17,10 @@ import BreedingLabModal from './components/BreedingLabModal';
 import Tutorial from './components/Tutorial';
 import { tutorialSteps } from './tutorialContent';
 import { Button } from './components/Button';
-import { PlantIcon, MissionIcon, GeneIcon, WaterDropsIcon } from './components/Icons';
+import { PlantIcon, MissionIcon, GeneIcon, WaterDropsIcon, QuestionMarkCircleIcon, CoinIcon, SprinklerIcon, LockIcon } from './components/Icons';
 import Modal from './components/Modal';
 import { audioManager } from './components/audio';
+import HintModal from './components/HintModal';
 
 const SAVE_KEY = 'greenWorldSave';
 const TUTORIAL_COMPLETED_KEY = 'greenWorldTutorialCompleted';
@@ -36,7 +39,80 @@ const getInitialGameState = (): GameState => ({
   missionProgress: {},
   genes: Object.values(PlantType).reduce((acc, type) => ({ ...acc, [type]: 0 }), {} as Record<PlantType, number>),
   weather: WeatherType.Sunny,
+  hasSprinkler: false,
 });
+
+
+interface SprinklerModalProps {
+  onClose: () => void;
+  onPurchase: () => void;
+  hasSprinkler: boolean;
+  playerMoney: number;
+  playerLevel: number;
+}
+
+const SprinklerModal: React.FC<SprinklerModalProps> = ({ onClose, onPurchase, hasSprinkler, playerMoney, playerLevel }) => {
+  const canAfford = playerMoney >= SPRINKLER_COST;
+  const isUnlocked = playerLevel >= SPRINKLER_UNLOCK_LEVEL;
+
+  return (
+    <Modal title="自動水やりスプリンクラー" onClose={onClose}>
+      <div className="p-6 text-slate-300 space-y-4 text-center">
+        <SprinklerIcon className="w-24 h-24 mx-auto text-cyan-400" />
+        {hasSprinkler ? (
+          <div>
+            <h3 className="text-xl font-bold text-green-400 mb-2">スプリンクラーは正常に稼働中です！</h3>
+            <p>毎日自動で全ての植物に水やりを行います。</p>
+            <div className="bg-slate-700 p-3 rounded-lg mt-4">
+              <p>毎日の維持費: <span className="font-bold text-yellow-300">{SPRINKLER_MAINTENANCE_COST}円</span></p>
+            </div>
+            <Button onClick={onClose} className="w-full mt-6 bg-gray-600 hover:bg-gray-500">
+              閉じる
+            </Button>
+          </div>
+        ) : (
+          <div>
+            <h3 className="text-xl font-bold mb-2">スプリンクラーを設置しませんか？</h3>
+            <p>毎日自動で水やりをしてくれる便利な機械です。水やりの手間と費用を節約できます！</p>
+            
+            {!isUnlocked ? (
+                <div className="bg-slate-900 border border-slate-700 p-4 rounded-lg mt-4 text-center">
+                    <p className="font-bold text-yellow-400 flex items-center justify-center gap-2">
+                        <LockIcon />
+                        レベル {SPRINKLER_UNLOCK_LEVEL} で解放されます
+                    </p>
+                     <Button onClick={onClose} className="w-full mt-6 bg-gray-600 hover:bg-gray-500">
+                      閉じる
+                    </Button>
+                </div>
+            ) : (
+                <>
+                    <div className="bg-slate-700 p-4 rounded-lg my-4 space-y-2">
+                      <div className="flex justify-between items-center text-lg">
+                          <span>設置費用:</span>
+                          <span className="font-bold text-yellow-300 flex items-center gap-1"><CoinIcon className="w-5 h-5"/>{SPRINKLER_COST.toLocaleString()}円</span>
+                      </div>
+                      <div className="flex justify-between items-center text-lg">
+                          <span>毎日の維持費:</span>
+                          <span className="font-bold text-yellow-300 flex items-center gap-1"><CoinIcon className="w-5 h-5"/>{SPRINKLER_MAINTENANCE_COST.toLocaleString()}円</span>
+                      </div>
+                    </div>
+                    <div className="flex justify-center gap-4 mt-6">
+                      <Button onClick={onClose} className="bg-gray-600 hover:bg-gray-500">
+                        やめる
+                      </Button>
+                      <Button onClick={onPurchase} disabled={!canAfford} className="bg-green-600 hover:bg-green-500">
+                        {canAfford ? '設置する' : 'お金が足りません'}
+                      </Button>
+                    </div>
+                </>
+            )}
+          </div>
+        )}
+      </div>
+    </Modal>
+  );
+};
 
 
 const App: React.FC = () => {
@@ -53,8 +129,13 @@ const App: React.FC = () => {
   const [isMissionsModalOpen, setIsMissionsModalOpen] = useState(false);
   const [isBuyPlotModalOpen, setIsBuyPlotModalOpen] = useState(false);
   const [isBreedingLabOpen, setIsBreedingLabOpen] = useState(false);
+  const [isHintModalOpen, setIsHintModalOpen] = useState(false);
   const [isWatering, setIsWatering] = useState(false);
   const [tutorialState, setTutorialState] = useState({ isActive: false, step: 0 });
+  const [isRevisitingSellers, setIsRevisitingSellers] = useState(false);
+  const [isRevisitingBuyer, setIsRevisitingBuyer] = useState(false);
+  const [isCo2Critical, setIsCo2Critical] = useState(false);
+  const [isSprinklerModalOpen, setIsSprinklerModalOpen] = useState(false);
 
   useEffect(() => {
     const savedData = localStorage.getItem(SAVE_KEY);
@@ -209,6 +290,7 @@ const App: React.FC = () => {
           plantStats: { ...initialGameState.plantStats, ...(savedData.gameState.plantStats || {}) },
           missionProgress: { ...initialGameState.missionProgress, ...(savedData.gameState.missionProgress || {}) },
           weather: savedData.gameState.weather || WeatherType.Sunny,
+          hasSprinkler: savedData.gameState.hasSprinkler || false,
         };
 
         // Post-load check for gene format to handle old saves
@@ -358,9 +440,25 @@ const App: React.FC = () => {
     }
 
     const weatherInfo = WEATHER_DEFINITIONS.find(w => w.type === newWeather)!;
-    const autoWatered = newWeather === WeatherType.Rainy || newWeather === WeatherType.Stormy;
-
+    
     setGameState(prev => {
+        const autoWateredByRain = newWeather === WeatherType.Rainy || newWeather === WeatherType.Stormy;
+        let newMoney = prev.money;
+        let sprinklerDidWork = false;
+        let maintenanceCostPaid = 0;
+
+        if (prev.hasSprinkler) {
+            if (newMoney >= SPRINKLER_MAINTENANCE_COST) {
+                newMoney -= SPRINKLER_MAINTENANCE_COST;
+                maintenanceCostPaid = SPRINKLER_MAINTENANCE_COST;
+                sprinklerDidWork = true;
+            } else {
+                addMessage("⚠️ お金が足りず、スプリンクラーの維持費を払えませんでした。");
+            }
+        }
+        
+        const autoWatered = autoWateredByRain || sprinklerDidWork;
+
         let newCo2 = prev.co2Level + dailySummary.co2Increased - dailySummary.co2Decreased;
         if (dailySummary.co2Surge) {
           newCo2 += dailySummary.co2Surge;
@@ -369,9 +467,28 @@ const App: React.FC = () => {
           newCo2 -= dailySummary.co2BonusReduction;
         }
 
+        const thresholds = [
+            { value: 90, message: "🚨最終警告：CO2濃度が90%を超えました！地球が悲鳴を上げています！" },
+            { value: 80, message: "🚨緊急事態：CO2濃度が80%に達しました！破局が迫っています！" },
+            { value: 60, message: "⚠️危険：CO2濃度が60%に達しました！地球の未来が危うい！" },
+            { value: 40, message: "⚠️警告：CO2濃度が40%に達しました。緑を増やさないと危険です！" },
+            { value: 20, message: "🔔注意：CO2濃度が20%に達しました。環境が悪化しています。" },
+        ];
+        
+        const crossedThresholds: string[] = [];
+        for (const threshold of thresholds) {
+            if (prev.co2Level < threshold.value && newCo2 >= threshold.value) {
+                crossedThresholds.push(threshold.message);
+            }
+        }
+
+        // Add messages for crossed thresholds, with the most severe one appearing first in the log
+        crossedThresholds.reverse().forEach(message => {
+            addMessage(message);
+        });
+
         if (dailySummary.eventMessage) {
             if (dailySummary.co2Surge) {
-                audioManager.playAlertSound();
                 setCo2SurgeTrigger(p => p + 1);
                 addMessage(`${dailySummary.eventMessage} (+${dailySummary.co2Surge}%)`);
             } else if (dailySummary.co2BonusReduction) {
@@ -414,16 +531,20 @@ const App: React.FC = () => {
         const newDay = prev.day + 1;
         addMessage(`☀️ ${newDay}日目になりました。`);
         addMessage(`今日の天気は${weatherInfo.emoji}${newWeather}です。`);
-        if(autoWatered) {
+        
+        if (sprinklerDidWork) {
+            addMessage(`スプリンクラーが作動し、植物に水がやられました。(維持費 ${SPRINKLER_MAINTENANCE_COST}円)`);
+        } else if (autoWateredByRain) {
           addMessage('雨のおかげで、すべての植物に水が与えられました！');
         }
         
         return {
             ...prev,
             day: newDay,
+            money: newMoney,
             co2Level: Math.max(0, newCo2),
             plots: newPlots,
-            moneySpentToday: 0,
+            moneySpentToday: maintenanceCostPaid,
             moneyEarnedToday: 0,
             weather: newWeather,
         };
@@ -542,7 +663,7 @@ const App: React.FC = () => {
                   type: selectedSeed,
                   growthStage: plantInfo.growthTime,
                   isGrown: false,
-                  isWatered: prev.weather === WeatherType.Rainy || prev.weather === WeatherType.Stormy
+                  isWatered: prev.weather === WeatherType.Rainy || prev.weather === WeatherType.Stormy || prev.hasSprinkler
                 },
               }
             : p
@@ -706,8 +827,12 @@ const App: React.FC = () => {
       }));
     }
     
-    setPhase('PLANTING');
-    addMessage(`植物を植えたり、世話をしたりしましょう。`);
+    if (isRevisitingBuyer) {
+        setIsRevisitingBuyer(false);
+    } else if (phase === 'BUYER_VISIT') {
+        setPhase('PLANTING');
+        addMessage(`植物を植えたり、世話をしたりしましょう。`);
+    }
   };
 
   const handleExtractGene = (plotId: number) => {
@@ -752,12 +877,28 @@ const App: React.FC = () => {
     addMessage(`遺伝子を合成して ${resultPlantInfo.emoji}${result} の種ができました！`);
   };
 
+  const handlePurchaseSprinkler = () => {
+    if (gameState.money >= SPRINKLER_COST) {
+        setGameState(prev => ({
+            ...prev,
+            money: prev.money - SPRINKLER_COST,
+            hasSprinkler: true,
+            moneySpentToday: prev.moneySpentToday + SPRINKLER_COST,
+        }));
+        addMessage(`スプリンクラーを ${SPRINKLER_COST}円 で設置しました！`);
+        audioManager.playMissionCompleteSound();
+        setIsSprinklerModalOpen(false);
+    } else {
+        addMessage("お金が足りません！");
+    }
+};
+
   const handleCloseSellerModal = () => {
     if (tutorialState.isActive && tutorialState.step === 2) {
         advanceTutorial();
     }
 
-    if (gameState.day % BUYER_VISIT_FREQUENCY === 0) {
+    if (gameState.day % BUYER_VISIT_FREQUENCY === 0 && !tutorialState.isActive) {
         setPhase('BUYER_VISIT');
         addMessage(`今日は植物を買いに来る人がいます。`);
     } else {
@@ -784,6 +925,7 @@ const App: React.FC = () => {
     if (gameState.co2Level >= MAX_CO2) {
       setPhase('GAME_OVER');
     }
+    setIsCo2Critical(gameState.co2Level >= 90);
   }, [gameState.co2Level]);
   
   if (phase === 'WELCOME') {
@@ -802,6 +944,8 @@ const App: React.FC = () => {
       return sum + plantInfo.waterCost;
   }, 0);
   const canAffordAllWater = gameState.money >= totalWaterCost;
+  
+  const grownPlants = gameState.plots.filter(p => p.plant && p.plant.isGrown);
 
   return (
     <div className="h-screen bg-gradient-to-b from-slate-900 to-sky-900 text-white flex flex-col overflow-hidden">
@@ -815,25 +959,52 @@ const App: React.FC = () => {
             isMuted={isMuted}
             onToggleMute={handleToggleMute}
             className="shrink-0"
+            isCo2Critical={isCo2Critical}
         />
         
         <main className="grid grid-rows-[minmax(0,2fr)_minmax(0,1fr)] md:grid-rows-none grid-cols-1 md:grid-cols-3 gap-6 flex-grow min-h-0">
           <div data-tutorial-id="garden-container" className="md:col-span-2 bg-black bg-opacity-30 p-4 rounded-2xl shadow-lg border border-slate-700 flex flex-col min-h-0">
             <div className="flex justify-between items-center mb-4 shrink-0">
-                <h2 className="text-2xl font-bold text-cyan-300 flex items-center gap-2">
-                    <PlantIcon className="w-6 h-6" />マイガーデン
-                </h2>
-                {plantsToWater.length > 0 && (
-                    <Button
-                        onClick={handleWaterAllPlants}
-                        disabled={!canAffordAllWater}
-                        className="bg-blue-600 hover:bg-blue-500 text-sm px-3 py-2 flex items-center gap-2"
-                        title={!canAffordAllWater ? `お金が足りません (${totalWaterCost}円必要)` : `まとめて水をやる (${totalWaterCost}円)`}
-                    >
-                        <WaterDropsIcon className="w-5 h-5" />
-                        <span>まとめて水やり ({totalWaterCost}円)</span>
+                <div className="flex items-center gap-4">
+                    <h2 className="text-2xl font-bold text-cyan-300 flex items-center gap-2">
+                        <PlantIcon className="w-6 h-6" />マイガーデン
+                    </h2>
+                    <Button onClick={() => setIsHintModalOpen(true)} className="bg-transparent hover:bg-slate-700 p-2 rounded-full" title="ヘルプ">
+                        <QuestionMarkCircleIcon className="w-6 h-6 text-slate-400" />
                     </Button>
-                )}
+                </div>
+                <div className="flex items-center gap-2">
+                    <Button
+                        onClick={() => setIsSprinklerModalOpen(true)}
+                        className="bg-teal-600 hover:bg-teal-500 text-sm px-3 py-2 flex items-center gap-2"
+                        disabled={gameState.level < SPRINKLER_UNLOCK_LEVEL && !gameState.hasSprinkler}
+                        title={gameState.level < SPRINKLER_UNLOCK_LEVEL && !gameState.hasSprinkler ? `レベル${SPRINKLER_UNLOCK_LEVEL}で解放` : '自動水やりスプリンクラー'}
+                    >
+                        <SprinklerIcon className="w-5 h-5" />
+                        <span>スプリンクラー</span>
+                    </Button>
+                    {grownPlants.length > 0 && phase === 'PLANTING' && (
+                        <Button
+                            onClick={() => setIsRevisitingBuyer(true)}
+                            className="bg-yellow-600 hover:bg-yellow-500 text-sm px-3 py-2 flex items-center gap-2"
+                            title="育った植物を売る"
+                        >
+                            <CoinIcon className="w-5 h-5" />
+                            <span>植物を売る</span>
+                        </Button>
+                    )}
+                    {plantsToWater.length > 0 && !gameState.hasSprinkler && (
+                        <Button
+                            onClick={handleWaterAllPlants}
+                            disabled={!canAffordAllWater}
+                            className="bg-blue-600 hover:bg-blue-500 text-sm px-3 py-2 flex items-center gap-2"
+                            title={!canAffordAllWater ? `お金が足りません (${totalWaterCost}円必要)` : `まとめて水をやる (${totalWaterCost}円)`}
+                        >
+                            <WaterDropsIcon className="w-5 h-5" />
+                            <span>まとめて水やり ({totalWaterCost}円)</span>
+                        </Button>
+                    )}
+                </div>
             </div>
             <div className="overflow-y-auto">
               <Garden 
@@ -862,6 +1033,8 @@ const App: React.FC = () => {
               seeds={gameState.seeds} 
               selectedSeed={selectedSeed} 
               onSelectSeed={handleSelectSeed}
+              canOpenShop={phase === 'PLANTING' && sellers.some(s => !s.sold)}
+              onOpenShop={() => setIsRevisitingSellers(true)}
             />
             <div className="bg-black bg-opacity-30 p-4 rounded-2xl shadow-lg border border-slate-700">
               <h3 className="text-lg font-bold mb-2 text-cyan-300">メッセージ</h3>
@@ -906,6 +1079,23 @@ const App: React.FC = () => {
         </main>
       </div>
 
+      {isHintModalOpen && (
+        <HintModal 
+          playerLevel={gameState.level}
+          onClose={() => setIsHintModalOpen(false)} 
+        />
+      )}
+      
+      {isSprinklerModalOpen && (
+        <SprinklerModal
+            onClose={() => setIsSprinklerModalOpen(false)}
+            onPurchase={handlePurchaseSprinkler}
+            hasSprinkler={gameState.hasSprinkler}
+            playerMoney={gameState.money}
+            playerLevel={gameState.level}
+        />
+      )}
+
       {isBreedingLabOpen && (
         <BreedingLabModal
           gameState={gameState}
@@ -927,24 +1117,28 @@ const App: React.FC = () => {
           <DailySummaryModal summary={dailySummary} onClose={advanceToNextDay} />
       )}
 
-      {phase === 'SELLER_VISIT' && (
+      {(phase === 'SELLER_VISIT' || isRevisitingSellers) && (
         <SeedSellerModal 
           sellers={sellers} 
           onBuy={handleBuySeed} 
-          onClose={handleCloseSellerModal}
+          onClose={isRevisitingSellers ? () => setIsRevisitingSellers(false) : handleCloseSellerModal}
           money={gameState.money}
           onBuyAll={handleBuyAllSeeds}
         />
       )}
 
-      {phase === 'BUYER_VISIT' && (
+      {(phase === 'BUYER_VISIT' || isRevisitingBuyer) && (
         <PlantBuyerModal
           plots={gameState.plots}
           onSell={handleSellPlants}
           onSelectForSale={handleTutorialPlantSelection}
           onClose={() => {
-            setPhase('PLANTING');
-            addMessage(`植物を植えたり、世話をしたりしましょう。`);
+            if (isRevisitingBuyer) {
+                setIsRevisitingBuyer(false);
+            } else if (phase === 'BUYER_VISIT') {
+                setPhase('PLANTING');
+                addMessage(`植物を植えたり、世話をしたりしましょう。`);
+            }
           }}
         />
       )}

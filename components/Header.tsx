@@ -9,9 +9,10 @@ interface HeaderProps {
   isMuted: boolean;
   onToggleMute: () => void;
   className?: string;
+  isCo2Critical: boolean;
 }
 
-const Header: React.FC<HeaderProps> = ({ stats, co2SurgeTrigger, isMuted, onToggleMute, className }) => {
+const Header: React.FC<HeaderProps> = ({ stats, co2SurgeTrigger, isMuted, onToggleMute, className, isCo2Critical }) => {
   const [isShaking, setIsShaking] = useState(false);
 
   const co2Percentage = (stats.co2Level / MAX_CO2) * 100;
@@ -42,6 +43,14 @@ const Header: React.FC<HeaderProps> = ({ stats, co2SurgeTrigger, isMuted, onTogg
         }
         .animate-shake {
           animation: shake 0.5s cubic-bezier(.36,.07,.19,.97) both;
+        }
+        @keyframes critical-pulse {
+          50% {
+            box-shadow: 0 0 12px 5px rgba(239, 68, 68, 0.5); /* red-500 with opacity */
+          }
+        }
+        .animate-critical-pulse {
+          animation: critical-pulse 1.5s ease-in-out infinite;
         }
       `}</style>
       <div className="grid grid-cols-3 md:grid-cols-6 gap-1 md:gap-2 text-center">
@@ -89,7 +98,7 @@ const Header: React.FC<HeaderProps> = ({ stats, co2SurgeTrigger, isMuted, onTogg
           </div>
         </div>
 
-        <div className={`bg-slate-800 p-1 md:p-2 rounded-lg flex items-center justify-center gap-1.5 md:gap-2 col-span-2 md:col-span-1 ${isShaking ? 'animate-shake' : ''}`} data-tutorial-id="co2-stat">
+        <div className={`bg-slate-800 p-1 md:p-2 rounded-lg flex items-center justify-center gap-1.5 md:gap-2 col-span-2 md:col-span-1 ${isShaking ? 'animate-shake' : ''} ${isCo2Critical ? 'animate-critical-pulse' : ''}`} data-tutorial-id="co2-stat">
            <LeafIcon className="w-4 h-4 md:w-8 md:h-8" />
            <div className="text-left w-full">
              <span className="text-[10px] md:text-xs text-slate-400">CO2濃度</span>

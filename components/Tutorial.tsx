@@ -12,6 +12,7 @@ const Tutorial: React.FC<TutorialProps> = ({ step, onNext, onSkip }) => {
   const [elementRect, setElementRect] = useState<DOMRect | null>(null);
   const [tooltipRect, setTooltipRect] = useState<{ width: number, height: number }>({ width: 0, height: 0 });
   const tooltipRef = useRef<HTMLDivElement>(null);
+  const [showSkipConfirm, setShowSkipConfirm] = useState(false);
 
   const currentStep = tutorialSteps[step];
   if (!currentStep) return null;
@@ -214,13 +215,33 @@ const Tutorial: React.FC<TutorialProps> = ({ step, onNext, onSkip }) => {
 
   return (
     <>
+      {showSkipConfirm && (
+        <div className="fixed inset-0 bg-black bg-opacity-80 flex items-center justify-center z-[10001] animate-fade-in">
+          <div className="bg-slate-800 p-6 rounded-lg shadow-2xl border border-slate-600 max-w-sm text-center m-4">
+            <h4 className="text-xl font-bold text-yellow-300 mb-4">チュートリアルをスキップ</h4>
+            <p className="text-slate-300 mb-6">
+              スキップしてしまうとこのゲームを楽しめなくなる可能性があります。
+              <br />
+              それでもスキップをしますか？
+            </p>
+            <div className="flex justify-center gap-4">
+              <Button onClick={() => setShowSkipConfirm(false)} className="bg-cyan-600 hover:bg-cyan-500">
+                チュートリアルを続ける
+              </Button>
+              <Button onClick={onSkip} className="bg-red-600 hover:bg-red-500">
+                スキップする
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
       {renderOverlay()}
       <div ref={tooltipRef} style={tooltipPositionStyle()} className="animate-fade-in">
         <div className="bg-slate-800 p-4 rounded-lg shadow-2xl border border-slate-600 w-full max-w-[calc(100vw-32px)] sm:w-72">
             <h3 className="text-lg font-bold text-cyan-300 mb-2">{currentStep.title}</h3>
             <p className="text-slate-300 text-sm mb-4">{currentStep.text}</p>
             <div className="flex justify-between items-center">
-                <Button onClick={onSkip} className="bg-gray-600 hover:bg-gray-500 text-xs px-2 py-0.5">スキップ</Button>
+                <Button onClick={() => setShowSkipConfirm(true)} className="bg-gray-600 hover:bg-gray-500 text-xs px-2 py-0.5">スキップ</Button>
                 {!currentStep.isActionDriven && (
                     <Button onClick={onNext} className="text-sm px-3 py-1">次へ</Button>
                 )}

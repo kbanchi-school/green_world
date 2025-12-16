@@ -1,4 +1,6 @@
 
+
+
 import React from 'react';
 
 interface IconProps {
@@ -103,5 +105,24 @@ export const WaterDropsIcon: React.FC<IconProps> = ({ className }) => (
         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16s-1.5-2.09-1.5-3.5a1.5 1.5 0 013 0c0 1.41-1.5 3.5-1.5 3.5z" />
         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 13s-1.5-2.09-1.5-3.5a1.5 1.5 0 013 0c0 1.41-1.5 3.5-1.5 3.5z" />
         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 16s-1.5-2.09-1.5-3.5a1.5 1.5 0 013 0c0 1.41-1.5 3.5-1.5 3.5z" />
+    </svg>
+);
+
+export const QuestionMarkCircleIcon: React.FC<IconProps> = ({ className }) => (
+  <svg xmlns="http://www.w3.org/2000/svg" className={`h-6 w-6 ${className}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.546-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+  </svg>
+);
+
+export const ShoppingCartIcon: React.FC<IconProps> = ({ className }) => (
+  <svg xmlns="http://www.w3.org/2000/svg" className={`h-6 w-6 ${className}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z" />
+  </svg>
+);
+
+export const SprinklerIcon: React.FC<IconProps> = ({ className }) => (
+    <svg xmlns="http://www.w3.org/2000/svg" className={`h-6 w-6 ${className}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+        <path strokeLinecap="round" strokeLinejoin="round" d="M2 12h2m8-10v2m-3.5 3.5l-1.4-1.4M15.5 5.5l1.4-1.4M4 12a8 8 0 1116 0H4z" />
+        <path strokeLinecap="round" strokeLinejoin="round" d="M8 16v1m4-1v1m4-1v1" />
     </svg>
 );

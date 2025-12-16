@@ -1,4 +1,5 @@
 
+
 export enum PlantType {
   MorningGlory = 'アサガオ',
   Tulip = 'チューリップ',
@@ -101,6 +102,7 @@ export interface GameState {
   missionProgress: MissionProgress;
   genes: Record<PlantType, number>;
   weather: WeatherType;
+  hasSprinkler: boolean;
 }
 
 export interface SaveData {

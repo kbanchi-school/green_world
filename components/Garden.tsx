@@ -25,7 +25,7 @@ const Garden: React.FC<GardenProps> = ({ plots, onPlotClick, selectedSeed, onBuy
         const plotClasses = `
         aspect-square rounded-lg flex items-center justify-center
         transition-all duration-300 border-2 relative
-        ${plot.plant ? (needsWater ? 'bg-orange-900 border-orange-700' : 'bg-green-900 border-green-700') : 'bg-yellow-900 border-yellow-700'}
+        ${plot.plant ? (needsWater && !gameState.hasSprinkler ? 'bg-orange-900 border-orange-700' : 'bg-green-900 border-green-700') : 'bg-yellow-900 border-yellow-700'}
         ${canPlant ? 'cursor-pointer hover:bg-yellow-800 hover:border-yellow-500 transform hover:scale-105' : ''}
         ${!plot.plant && !selectedSeed ? 'cursor-not-allowed' : ''}
         `;
@@ -48,11 +48,11 @@ const Garden: React.FC<GardenProps> = ({ plots, onPlotClick, selectedSeed, onBuy
                 <span className="text-5xl block">{plantInfo!.emoji}</span>
                  <span className="text-sm font-bold block mt-1">
                     {plot.plant.isGrown ? 'Ready' : 
-                     needsWater ? '水が必要' : 
+                     needsWater ? (gameState.hasSprinkler ? '自動水やり' : '水が必要') : 
                      plot.plant.isWatered ? `あと${plot.plant.growthStage}日` : ''
                     }
                 </span>
-                {needsWater && (
+                {needsWater && !gameState.hasSprinkler && (
                    <button
                     onClick={(e) => { e.stopPropagation(); onWaterPlant(plot.id); }}
                     className="absolute bottom-1 right-1 bg-blue-500 hover:bg-blue-400 text-white p-2 rounded-full transform hover:scale-110 transition-transform disabled:bg-gray-600"

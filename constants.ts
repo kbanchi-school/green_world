@@ -1,8 +1,9 @@
 
+
 import { PlantType, PlantInfo, Mission, GeneType, WeatherType } from './types';
 
 export const INITIAL_MONEY = 5000;
-export const INITIAL_CO2 = 20;
+export const INITIAL_CO2 = 19;
 export const MAX_CO2 = 100;
 export const MIN_DAILY_CO2_INCREASE = 2;
 export const MAX_DAILY_CO2_INCREASE = 5;
@@ -13,6 +14,9 @@ export const PLOT_UNLOCK_LEVEL = 3;
 export const PLOT_BASE_COST = 1000;
 export const PLOT_COST_INCREMENT = 500;
 export const BREEDING_UNLOCK_LEVEL = 5;
+export const SPRINKLER_UNLOCK_LEVEL = 2;
+export const SPRINKLER_COST = 3000;
+export const SPRINKLER_MAINTENANCE_COST = 100;
 
 export const GENE_COLORS: Record<GeneType, string> = {
   [GeneType.Red]: 'bg-red-500 ring-red-300',

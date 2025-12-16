@@ -1,15 +1,18 @@
 import React, { useState } from 'react';
 import { PlantType } from '../types';
 import { PLANT_DATA } from '../constants';
-import { SeedIcon } from './Icons';
+import { SeedIcon, ShoppingCartIcon } from './Icons';
+import { Button } from './Button';
 
 interface InventoryProps {
   seeds: Record<PlantType, number>;
   selectedSeed: PlantType | null;
   onSelectSeed: (seed: PlantType | null) => void;
+  canOpenShop: boolean;
+  onOpenShop: () => void;
 }
 
-const Inventory: React.FC<InventoryProps> = ({ seeds, selectedSeed, onSelectSeed }) => {
+const Inventory: React.FC<InventoryProps> = ({ seeds, selectedSeed, onSelectSeed, canOpenShop, onOpenShop }) => {
   const [hoveredSeed, setHoveredSeed] = useState<PlantType | null>(null);
   const [tooltipPosition, setTooltipPosition] = useState<{ x: number; y: number } | null>(null);
   
@@ -34,7 +37,18 @@ const Inventory: React.FC<InventoryProps> = ({ seeds, selectedSeed, onSelectSeed
   return (
     <>
       <div className="bg-black bg-opacity-30 p-4 rounded-2xl shadow-lg border border-slate-700">
-        <h3 className="text-lg font-bold mb-3 text-cyan-300 flex items-center gap-2"><SeedIcon />種のインベントリ</h3>
+        <div className="flex justify-between items-center mb-3">
+          <h3 className="text-lg font-bold text-cyan-300 flex items-center gap-2"><SeedIcon />種のインベントリ</h3>
+          {canOpenShop && (
+            <Button
+                onClick={onOpenShop}
+                className="bg-green-600 hover:bg-green-500 text-sm px-3 py-1 flex items-center gap-2"
+            >
+                <ShoppingCartIcon className="w-4 h-4" />
+                <span>お店を見る</span>
+            </Button>
+          )}
+        </div>
         <div className="space-y-2 max-h-48 overflow-y-auto pr-2">
           {ownedSeedTypes.length > 0 ? (
             ownedSeedTypes.map(type => {
